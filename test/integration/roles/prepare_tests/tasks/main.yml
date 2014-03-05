@@ -17,13 +17,17 @@
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
 
-- name: clean out the test directory
+- name: clean out the local test directory
   file: name={{output_dir|mandatory}} state=absent
+  delegate_to: localhost
+  sudo: false
   tags:
     - prepare
 
-- name: create the test directory
+- name: create the local test directory
   file: name={{output_dir}} state=directory
+  delegate_to: localhost
+  sudo: false
   tags:
     - prepare
 
