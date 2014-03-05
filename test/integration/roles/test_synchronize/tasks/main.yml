@@ -16,18 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
 
-# FIXME: tags should auto-apply to role dependencies
-- name: cleanup old files
-  shell: rm -rf {{output_dir}}/*
+- name: cleanup old remote files
+  file: state=absent path={{output_dir}}
+  register: remote_dir
 
-- name: create test new files
-  copy: dest={{output_dir}}/{{item}} mode=0644 content="hello world"
+- name: create local test files
+  copy: dest={{output_dir}}/{{item}} mode=0644 content="hello world - {{item}}\n"
+  sudo: false
+  delegate_to: localhost
   with_items:
     - foo.txt
     - bar.txt
+    - baz.txt
+  register: input_files
 
-- name: synchronize file to new filename
-  synchronize: src={{output_dir}}/foo.txt dest={{output_dir}}/foo.result
+- name: synchronize local file to new local filename
+  synchronize: src={{output_dir}}/foo.txt dest={{output_dir}}/foo.new
+  delegate_to: localhost
+  sudo: false
   register: sync_result
 
 - assert:
@@ -40,19 +46,49 @@
         - "sync_result.msg.startswith('>f+')"
         - "sync_result.msg.endswith('+ foo.txt\n')"
 
-- name: synchronize files using with_items (issue#5965)
-  synchronize: src={{output_dir}}/{{item}} dest={{output_dir}}/{{item}}.result
+- name: synchronize local file to remote
+  synchronize: src={{output_dir}}/foo.txt dest={{remote_dir.path}}/
+  register: sync_result
+
+- assert:
+    that:
+        - "'changed' in sync_result"
+        - "sync_result.changed == true"
+        - "'cmd' in sync_result"
+        - "'rsync' in sync_result.cmd"
+        - "'msg' in sync_result"
+        - "sync_result.msg.startswith('<f+')"
+        - "sync_result.msg.endswith('+ foo.txt\n')"
+
+- name: assert remote file is present
+  file: state=file path={{output_dir}}/foo.txt
+
+- name: synchronize local files to remote using with_items (issue#5965)
+  synchronize: src={{output_dir}}/{{item}} dest={{remote_dir.path}}/
   with_items:
     - foo.txt
     - bar.txt
+    - baz.txt
   register: sync_result
 
-- debug: var=sync_result
 - assert:
     that:
         - "sync_result.changed"
         - "sync_result.msg == 'All items completed'"
         - "'results' in sync_result"
-        - "sync_result.results|length == 2"
-        - "sync_result.results[0].msg.endswith('+ foo.txt\n')"
+        - "sync_result.results|length == 3"                     # 3 files were synced
+        - "sync_result.results[0].changed == False"             # First file should NOT have changed
+        - "sync_result.results[0].msg == ''"                    # Should have msg=''
+        - "sync_result.results[1].changed == True"              # Second file should have changed
+        - "sync_result.results[1].msg.startswith('<f+')"
         - "sync_result.results[1].msg.endswith('+ bar.txt\n')"
+        - "sync_result.results[2].changed == True"              # Thrd file should have changed
+        - "sync_result.results[2].msg.startswith('<f+')"
+        - "sync_result.results[2].msg.endswith('+ baz.txt\n')"
+
+- name: assert remote files are present
+  file: state=file path={{output_dir}}/{{item}}
+  with_items:
+    - foo.txt
+    - bar.txt
+    - baz.txt
