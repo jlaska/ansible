@@ -215,7 +215,7 @@ class Task(object):
         self.items_lookup_terms  = ds.get('items_lookup_terms', None)
      
 
-        self.ignore_errors = ds.get('ignore_errors', False)
+        self.ignore_errors = ds.get('ignore_errors', utils.boolean(os.environ.get('ANSIBLE_IGNORE_ERRORS', False)))
         self.any_errors_fatal = ds.get('any_errors_fatal', play.any_errors_fatal)
 
         self.always_run = ds.get('always_run', False)
