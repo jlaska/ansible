@@ -45,6 +45,24 @@ else
 DATE := $(shell date --utc --date="$(GIT_DATE)" +%Y%m%d%H%M)
 endif
 
+# DEB build parameters
+DEBUILD_BIN ?= debuild
+DEBUILD_OPTS = --source-option="-I"
+# Sign OFFICIAL builds using 'DEBSIGN_KEYID'
+DEBSIGN_KEYID ?=
+ifeq ($(OFFICIAL),yes)
+    DEBUILD_OPTS += -k$(DEBSIGN_KEYID)
+    DEB_RELEASE = 1ppa
+else
+    DEBUILD_OPTS += -uc -us
+    DEB_RELEASE = 0.git$(DATE)
+endif
+DEBUILD = $(DEBUILD_BIN) $(DEBUILD_OPTS)
+DEB_PPA ?= ppa:ansible/ansible
+# Choose the desired Ubuntu release: lucid precise saucy trusty
+DEB_DIST ?= unstable
+DEB_NVR = $(NAME)_$(VERSION)-$(DEB_RELEASE)~$(DEB_DIST)
+
 # RPM build parameters
 RPMSPECDIR= packaging/rpm
 RPMSPEC = $(RPMSPECDIR)/ansible.spec
@@ -178,12 +196,30 @@ rpm: rpmcommon
 	@echo "#############################################"
 
 debian: sdist
+	@mkdir -p deb-build/$(DEB_DIST)
+	@tar -C deb-build/$(DEB_DIST) -xvf dist/$(NAME)-$(VERSION).tar.gz
+	@cp -a packaging/debian deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/
+	@sed -ie "s#^$(NAME) (\([^)]*\)) \([^;]*\);#ansible (\1-$(DEB_RELEASE)~$(DEB_DIST)) $(DEB_DIST);#" deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/debian/changelog
+
 deb: debian
-	cp -r packaging/debian ./
-	chmod 755 debian/rules
-	fakeroot debian/rules clean
-	fakeroot dh_install
-	fakeroot debian/rules binary
+	(cd deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/ && $(DEBUILD) -b)
+	@echo "#############################################"
+	@echo "Ansible DEB artifacts:"
+	@echo deb-build/$(DEB_DIST)/$(DEB_NVR)_all.deb
+	@echo "#############################################"
+
+deb-src: debian
+	(cd deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/ && $(DEBUILD) -S)
+	@echo "#############################################"
+	@echo "Ansible DEB artifacts:"
+	@echo deb-build/$(DEB_DIST)/$(DEB_NVR)*
+	@echo "#############################################"
+
+deb-upload: deb
+	$(DPUT) $(DEB_PPA) deb-build/$(DEB_DIST)/$(DEB_NVR)_amd64.changes
+
+deb-src-upload: deb-src
+	$(DPUT) $(DEB_PPA) deb-build/$(DEB_DIST)/$(DEB_NVR)_source.changes
 
 # for arch or gentoo, read instructions in the appropriate 'packaging' subdirectory directory
 
