@@ -49,9 +49,11 @@ endif
 DEBUILD_BIN ?= debuild
 DEBUILD_OPTS = --source-option="-I"
 # Sign OFFICIAL builds using 'DEBSIGN_KEYID'
-DEBSIGN_KEYID ?=
 ifeq ($(OFFICIAL),yes)
-    DEBUILD_OPTS += -k$(DEBSIGN_KEYID)
+    # DEBSIGN_KEYID is required when signing
+    ifneq ($(DEBSIGN_KEYID),)
+        DEBUILD_OPTS += -k$(DEBSIGN_KEYID)
+    endif
     DEB_RELEASE = 1ppa
 else
     DEBUILD_OPTS += -uc -us
