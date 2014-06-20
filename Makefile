@@ -50,22 +50,24 @@ endif
 # DEB build parameters
 DEBUILD_BIN ?= debuild
 DEBUILD_OPTS = --source-option="-I"
+DPUT_BIN ?= dput
+DPUT_OPTS =
 # Sign OFFICIAL builds using 'DEBSIGN_KEYID'
 ifeq ($(OFFICIAL),yes)
+    DEB_RELEASE = 1ppa
     # DEBSIGN_KEYID is required when signing
     ifneq ($(DEBSIGN_KEYID),)
         DEBUILD_OPTS += -k$(DEBSIGN_KEYID)
     endif
-    DEB_RELEASE = 1ppa
 else
-    DEBUILD_OPTS += -uc -us
     DEB_RELEASE = 0.git$(DATE)
+    DEBUILD_OPTS += -uc -us
+    DPUT_OPTS += -u
 endif
 DEBUILD = $(DEBUILD_BIN) $(DEBUILD_OPTS)
 DEB_PPA ?= ppa:ansible/ansible
 # Choose the desired Ubuntu release: lucid precise saucy trusty
 DEB_DIST ?= unstable
-DEB_NVR = $(NAME)_$(VERSION)-$(DEB_RELEASE)~$(DEB_DIST)
 
 # RPM build parameters
 RPMSPECDIR= packaging/rpm
@@ -200,30 +202,44 @@ rpm: rpmcommon
 	@echo "#############################################"
 
 debian: sdist
-	@mkdir -p deb-build/$(DEB_DIST)
-	@tar -C deb-build/$(DEB_DIST) -xvf dist/$(NAME)-$(VERSION).tar.gz
-	@cp -a packaging/debian deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/
-	@sed -ie "s#^$(NAME) (\([^)]*\)) \([^;]*\);#ansible (\1-$(DEB_RELEASE)~$(DEB_DIST)) $(DEB_DIST);#" deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/debian/changelog
+	@for DIST in $(DEB_DIST) ; do \
+	    mkdir -p deb-build/$${DIST} ; \
+	    tar -C deb-build/$${DIST} -xvf dist/$(NAME)-$(VERSION).tar.gz ; \
+	    cp -a packaging/debian deb-build/$${DIST}/$(NAME)-$(VERSION)/ ; \
+	    sed -ie "s#^$(NAME) (\([^)]*\)) \([^;]*\);#ansible (\1-$(DEB_RELEASE)~$${DIST}) $${DIST};#" deb-build/$${DIST}/$(NAME)-$(VERSION)/debian/changelog ; \
+	done
 
 deb: debian
-	(cd deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/ && $(DEBUILD) -b)
+	@for DIST in $(DEB_DIST) ; do \
+	    (cd deb-build/$${DIST}/$(NAME)-$(VERSION)/ && $(DEBUILD) -b) ; \
+	done
 	@echo "#############################################"
 	@echo "Ansible DEB artifacts:"
-	@echo deb-build/$(DEB_DIST)/$(DEB_NVR)_all.deb
+	@for DIST in $(DEB_DIST) ; do \
+	    echo deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_amd64.changes ; \
+	done
 	@echo "#############################################"
 
 deb-src: debian
-	(cd deb-build/$(DEB_DIST)/$(NAME)-$(VERSION)/ && $(DEBUILD) -S)
+	@for DIST in $(DEB_DIST) ; do \
+	    (cd deb-build/$${DIST}/$(NAME)-$(VERSION)/ && $(DEBUILD) -S) ; \
+	done
 	@echo "#############################################"
 	@echo "Ansible DEB artifacts:"
-	@echo deb-build/$(DEB_DIST)/$(DEB_NVR)*
+	@for DIST in $(DEB_DIST) ; do \
+	    echo deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_source.changes ; \
+	done
 	@echo "#############################################"
 
 deb-upload: deb
-	$(DPUT) $(DEB_PPA) deb-build/$(DEB_DIST)/$(DEB_NVR)_amd64.changes
+	@for DIST in $(DEB_DIST) ; do \
+	    $(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_amd64.changes ; \
+	done
 
 deb-src-upload: deb-src
-	$(DPUT) $(DEB_PPA) deb-build/$(DEB_DIST)/$(DEB_NVR)_source.changes
+	@for DIST in $(DEB_DIST) ; do \
+	    $(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_source.changes ; \
+	done
 
 # for arch or gentoo, read instructions in the appropriate 'packaging' subdirectory directory
 
