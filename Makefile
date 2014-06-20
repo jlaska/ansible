@@ -5,7 +5,9 @@
 #
 # useful targets:
 #   make sdist ---------------- produce a tarball
+#   make srpm ----------------- produce a SRPM
 #   make rpm  ----------------- produce RPMs
+#   make deb-src -------------- produce a DEB source
 #   make deb ------------------ produce a DEB
 #   make docs ----------------- rebuild the manpages (results are checked in)
 #   make tests ---------------- run the tests
