@@ -134,6 +134,7 @@ clean:
 	find ./docs/man/man3 -type f -name "*.3" -delete
 	@echo "Cleaning up output from test runs"
 	rm -rf test/test_data
+	rm -rf .tox
 	@echo "Cleaning up RPM building stuff"
 	rm -rf MANIFEST rpm-build
 	@echo "Cleaning up Debian building stuff"
