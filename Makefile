@@ -93,6 +93,9 @@ all: clean python
 tests:
 	PYTHONPATH=./lib ANSIBLE_LIBRARY=./library  $(NOSETESTS) -d -w test/units -v
 
+tox:
+	tox
+
 authors:
 	sh hacking/authors.sh
 
