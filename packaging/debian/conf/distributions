@@ -1,0 +1,41 @@
+Origin: Ansible, Inc.
+Label: Ansible, Inc.
+Codename: trusty
+Architectures: i386 amd64
+Components: main
+Description: Ansible Tower APT Repository
+
+Origin: Ansible, Inc.
+Label: Ansible, Inc.
+Codename: precise
+Architectures: i386 amd64
+Components: main
+Description: Ansible Tower APT Repository
+
+Origin: Ansible, Inc.
+Label: Ansible, Inc.
+Codename: lucid
+Architectures: i386 amd64
+Components: main
+Description: Ansible Tower APT Repository
+
+Origin: Ansible, Inc.
+Label: Ansible, Inc.
+Codename: utopic
+Architectures: i386 amd64
+Components: main
+Description: Ansible Tower APT Repository
+
+Origin: Ansible, Inc.
+Label: Ansible, Inc.
+Codename: vivid
+Architectures: i386 amd64
+Components: main
+Description: Ansible Tower APT Repository
+
+Origin: Ansible, Inc.
+Label: Ansible, Inc.
+Codename: unstable
+Architectures: i386 amd64
+Components: main
+Description: Ansible Tower APT Repository

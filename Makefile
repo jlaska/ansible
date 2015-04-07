@@ -51,8 +51,10 @@ endif
 # DEB build parameters
 DEBUILD_BIN ?= debuild
 DEBUILD_OPTS = --source-option="-I"
+REPREPRO_BIN ?= reprepro
+REPREPRO_OPTS ?= -V --basedir reprepro --confdir ./packaging/debian/conf --export=force
 DPUT_BIN ?= dput
-DPUT_OPTS ?=
+DPUT_OPTS ?= -c packaging/dput/dput.cf
 DEB_DATE := $(shell date +"%a, %d %b %Y %T %z")
 ifeq ($(OFFICIAL),yes)
     DEB_RELEASE = $(RELEASE)ppa
@@ -151,6 +153,7 @@ clean:
 	rm -rf deb-build
 	rm -rf docs/json
 	rm -rf docs/js
+	rm -rf reprepro
 	@echo "Cleaning up authors file"
 	rm -f AUTHORS.TXT
 	find . -type f -name '*.pyc' -delete
@@ -252,6 +255,15 @@ deb-src-upload: deb-src
 	@for DIST in $(DEB_DIST) ; do \
 	    $(DPUT_BIN) $(DPUT_OPTS) $(DEB_PPA) deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_source.changes ; \
 	done
+
+reprepro: deb
+	for DIST in $(DEB_DIST) ; do \
+		$(REPREPRO_BIN) $(REPREPRO_OPTS) remove $${DIST} $(NAME) ; \
+	done; \
+	$(REPREPRO_BIN) $(REPREPRO_OPTS) clearvanished; \
+	for DIST in $(DEB_DIST) ; do \
+        $(REPREPRO_BIN) $(REPREPRO_OPTS) --keepunreferencedfiles --ignore=brokenold includedeb $${DIST} deb-build/$${DIST}/$(NAME)_$(VERSION)-$(DEB_RELEASE)~$${DIST}_all.deb ; \
+	done; \
 
 # for arch or gentoo, read instructions in the appropriate 'packaging' subdirectory directory
 

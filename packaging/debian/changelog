@@ -3,7 +3,6 @@ ansible (%VERSION%-%RELEASE%~%DIST%) %DIST%; urgency=low
   * %VERSION% release
 
  -- Ansible, Inc. <support@ansible.com>  %DATE%
->>>>>>> Stashed changes
 
 ansible (1.9.0.1) unstable; urgency=low
 

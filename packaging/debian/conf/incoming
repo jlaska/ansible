@@ -1,0 +1,7 @@
+Name: incoming
+IncomingDir: reprepro/incoming
+TempDir: reprepro/tmp
+Allow: trusty precise lucid vivid utopic unstable
+Multiple: Yes
+Permit: older_version unused_files
+Cleanup: on_deny on_error unused_files
